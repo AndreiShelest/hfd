@@ -89,6 +89,11 @@ my_calmar_ratio <- function(x, scale) {
   scale * mean(coredata(x), na.rm = TRUE) / maxdrawdown(cumsum(x))$maxdrawdown
 }
 
+target_metric = function(net_calmar_ratio, net_pnl)
+{
+  net_calmar_ratio * max(0, log(abs(net_pnl/1000)))
+}
+
 apply_EMA = function(quarter_data, ticker, fast, slow, pos_flat)
 {
   ticker_data = quarter_data[, ticker]
@@ -145,6 +150,19 @@ aggr_data = aggregate_daily(gross_pnl, net_pnl, n_trans)
 
 
 # stats
+
+strat_stats = list(
+  gross_sr = my_sharpe_ratio(x = aggr_data$gross_pnl, scale = 252),
+  net_sr = my_sharpe_ratio(x = aggr_data$net_pnl, scale = 252),
+  gross_calmar_ratio = my_calmar_ratio(x = aggr_data$gross_pnl, scale = 252),
+  net_calmar_ratio = my_calmar_ratio(x = aggr_data$net_pnl, scale = 252),
+  av_n_trades = mean(aggr_data$n_trans, na.rm = TRUE),
+  cum_gross_pnl = sum(aggr_data$gross_pnl),
+  cum_net_pnl = sum(aggr_data$net_pnl)
+)
+strat_stats$target_metric = target_metric(strat_stats$net_calmar_ratio, strat_stats$net_pnl)
+
+strat_stats
 
 # plot
 
