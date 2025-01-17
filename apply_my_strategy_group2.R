@@ -103,17 +103,17 @@ for (selected_quarter in c("2022_Q1", "2022_Q3", "2022_Q4",
   # - exit all positions 15 minutes before the session end, i.e. at 16:45
   # - do not trade within the first 15 minutes after the break (until 18:15)
   
-  data.group2$position.AUD.mom[times(times_) > times("16:45:00") &
-                                times(times_) <= times("18:15:00")] <- 0
+  data.group2$position.AUD.mom[times(times_) > times("16:40:00") &
+                                times(times_) <= times("18:10:00")] <- 0
   
-  data.group2$position.CAD.mom[times(times_) > times("16:45:00") &
-                                 times(times_) <= times("18:15:00")] <- 0
+  data.group2$position.CAD.mom[times(times_) > times("16:40:00") &
+                                 times(times_) <= times("18:10:00")] <- 0
   
-  data.group2$position.XAG.mom[times(times_) > times("16:45:00") &
-                                 times(times_) <= times("18:15:00")] <- 0
+  data.group2$position.XAG.mom[times(times_) > times("16:40:00") &
+                                 times(times_) <= times("18:10:00")] <- 0
   
-  data.group2$position.XAU.mom[times(times_) > times("16:45:00") &
-                                 times(times_) <= times("18:15:00")] <- 0
+  data.group2$position.XAU.mom[times(times_) > times("16:40:00") &
+                                 times(times_) <= times("18:10:00")] <- 0
   
   
   # lets also fill every missing position with the previous one
@@ -228,8 +228,8 @@ for (selected_quarter in c("2022_Q1", "2022_Q3", "2022_Q4",
   
   # create a plot of gros and net pnl and save it to png file
   
-  png(filename = paste0("pnl_group2_", selected_quarter, ".png"),
-      width = 1000, height = 600)
+  # png(filename = paste0("pnl_group2_", selected_quarter, ".png"),
+  #     width = 1000, height = 600)
   print( # when plotting in a loop you have to use print()
     plot(cbind(cumsum(data.group2.daily$pnl_gross.mom),
                cumsum(data.group2.daily$pnl_net.mom)),
@@ -242,7 +242,7 @@ for (selected_quarter in c("2022_Q1", "2022_Q3", "2022_Q4",
          legend.loc = "topleft",
          cex = 1)
   )
-  dev.off()
+  # dev.off()
   
   # remove all unneeded objects for group 2
   rm(data.group2, my.endpoints, grossSR, netSR, av.daily.ntrades,
