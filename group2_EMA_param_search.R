@@ -32,61 +32,54 @@ search_for_ema = function()
 {
   ema_metrics_df = NULL
   
-  for(ticker in row.names(tickers_config))
+
+  for(selected_quarter in quarters)
   {
-    for(selected_quarter in quarters)
+    tickers_data = load_quarter(selected_quarter)
+    
+    pos_flat = init_pos_flat(tickers_data)
+    pos_flat = apply_trading_time_assumptions(tickers_data, pos_flat)
+    
+    # EMA
+    
+    for(fast_ema in seq(10, 110, 10))
     {
-      tickers_data = load_quarter(selected_quarter)
-      
-      pos_flat = init_pos_flat(tickers_data)
-      pos_flat = apply_trading_time_assumptions(tickers_data, pos_flat)
-      
-      # EMA
-      
-      for(fast_ema in seq(10, 110, 10))
+      for(slow_ema in seq(60, 500, 40))
       {
-        for(slow_ema in seq(60, 500, 40))
+        if(fast_ema >= slow_ema)
         {
-          if(fast_ema >= slow_ema)
-          {
-            next
-          }
-          
-          print(glue("ticker={ticker}, quarter={selected_quarter}. EMA: fast={fast_ema}, slow={slow_ema}."))
-          
-          mom_strat = create_EMA(
-            tickers_data, ticker, tickers_config, fast_ema, slow_ema, pos_flat, 'mom',
-            glue("EMA({fast_ema}, {slow_ema}) mom"))
-          mrev_strat = create_EMA(
-            tickers_data, ticker, tickers_config, fast_ema, slow_ema, pos_flat, 'mrev',
-            glue("EMA({fast_ema}, {slow_ema}) mrev"))
-          
-          mom_aggr = mom_strat$get_daily_aggregates()
-          mrev_aggr = mrev_strat$get_daily_aggregates()
-          
-          mom_metrics = get_strategy_metrics(mom_aggr)
-          mrev_metrics = get_strategy_metrics(mrev_aggr)
-          
-          print(glue("mom={mom_metrics$target_metric}, mrev={mrev_metrics$target_metric}"))
-          
-          summary_df = data.frame(mom_metrics)
-          summary_df = rbind(summary_df, mrev_metrics)
-          
-          summary_df = cbind(quarter = c(selected_quarter, selected_quarter),
-                             ticker,
-                             strategy = c('mom', 'mrev'),
-                             fast_ema,
-                             slow_ema,
-                             summary_df)
-          
-          if(is.null(ema_metrics_df))
-          {
-            ema_metrics_df = summary_df
-          }
-          else
-          {
-            ema_metrics_df = rbind(ema_metrics_df, summary_df)
-          }
+          next
+        }
+        
+        print(glue("quarter={selected_quarter}. EMA: fast={fast_ema}, slow={slow_ema}."))
+        
+        ema_strats = list()
+
+        for(ticker in row.names(tickers_config))
+        {
+          ema_strat = create_EMA(
+            tickers_data, ticker, tickers_config, fast_ema, slow_ema, pos_flat, tickers_config[ticker,]$default_strat)
+          ema_strats[[ticker]] = ema_strat
+        }
+        
+        ema_aggr = daily_aggregate_strategies(ema_strats)
+        ema_metrics = get_strategy_metrics(ema_aggr)
+        
+        print(glue("net_pnl={ema_metrics$cum_net_pnl}, tm={ema_metrics$target_metric}"))
+
+        summary_df = cbind(quarter = c(selected_quarter),
+                           strategy = c('mixed'),
+                           fast_ema,
+                           slow_ema,
+                           data.frame(ema_metrics))
+
+        if(is.null(ema_metrics_df))
+        {
+          ema_metrics_df = summary_df
+        }
+        else
+        {
+          ema_metrics_df = rbind(ema_metrics_df, summary_df)
         }
       }
     }
@@ -95,68 +88,45 @@ search_for_ema = function()
   return(ema_metrics_df)
 }
 
-select_ema_param = function(ticker, strat_type, ema_metrics_df)
+select_ema_param = function(strat_type, ema_metrics_df)
 {
-  fast_emas = c()
-  slow_emas = c()
-  t_metrics = c()
+  metrics_aggr = aggregate(cum_net_pnl ~ fast_ema + slow_ema, data=ema_metrics_df, sum) # sum by each quarter
+  print(metrics_aggr)
+  best_metrics = metrics_aggr[which.max(metrics_aggr$cum_net_pnl),]
   
-  for(quarter in quarters)
-  {
-    filt_metrics_df = ema_metrics_df[(ema_metrics_df$strategy == strat_type) & (ema_metrics_df$quarter == quarter) & (ema_metrics_df$ticker == ticker),]
-    
-    quarter_max = filt_metrics_df[which.max(filt_metrics_df$target_metric),]
-    
-    fast_emas = c(fast_emas, quarter_max$fast_ema)
-    slow_emas = c(slow_emas, quarter_max$slow_ema)
-    t_metrics = c(t_metrics, quarter_max$target_metric)
-    
-    print(glue("{ticker}, {strat_type}, {quarter}, fast_ema={quarter_max$fast_ema}, slow_ema={quarter_max$slow_ema}, t_metric={quarter_max$target_metric}"))
-  }
+  print(best_metrics)
   
   return(list(
-    fast_ema=round(mean(fast_emas)), 
-    slow_ema=round(mean(slow_emas)),
-    t_metric_qsum=sum(t_metrics)))
+    fast_ema=best_metrics$fast_ema,
+    slow_ema=best_metrics$slow_ema))
 }
 
 select_all_ticker_params = function(ema_metrics_df)
 {
   selected_ema_params = NULL
   
-  for(ticker in row.names(tickers_config))
-  {
-    mrev_params = select_ema_param(ticker, 'mrev', ema_metrics_df)
-    mrev_params_df = data.frame(ticker=ticker, type='mrev', mrev_params)
-    
-    selected_ema_params = rbind(selected_ema_params, mrev_params_df)
-    
-    mom_params = select_ema_param(ticker, 'mom', ema_metrics_df)
-    mom_params_df = data.frame(ticker=ticker, type='mom', mom_params)
-
-    selected_ema_params = rbind(selected_ema_params, mom_params_df)
-  }
+  mixed_params = select_ema_param('mixed', ema_metrics_df)
+  print(mixed_params)
+  mixed_params_df = data.frame(type='mixed', mixed_params)
   
-  selected_ema_params
+  return(mixed_params_df)
 }
 
 
-# ema_metrics_df = search_for_ema()
-ema_metrics_df = read.csv("output/ema_metrics.csv")
-
-write.csv(ema_metrics_df, 
+ema_metrics_df = search_for_ema()
+write.csv(ema_metrics_df,
           "output/ema_metrics.csv",
           row.names = FALSE)
+# ema_metrics_df = read.csv("output/ema_metrics.csv")
 
-selected_ema_params = select_all_ticker_params(ema_metrics_df)
-
-max_t_metric = aggregate(t_metric_qsum ~ ticker, data = selected_ema_params, max)
-best_ema_params = merge(max_t_metric, selected_ema_params, by = c("ticker", "t_metric_qsum"))
+best_ema_params = select_all_ticker_params(ema_metrics_df)
 
 best_ema_params
 write.csv(best_ema_params,
           "output/best_ema_params.csv",
           row.names=FALSE)
+
+
 
 # for(quarter in quarters)
 # {
@@ -174,5 +144,6 @@ write.csv(best_ema_params,
 #               col_variable = "target_metric",
 #               main = glue("{quarter} mrev")))
 # }
+
 
 gc()

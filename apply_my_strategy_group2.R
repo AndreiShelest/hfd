@@ -51,26 +51,26 @@ for (selected_quarter in quarters) {
   pos_flat = apply_trading_time_assumptions(tickers_data, pos_flat)
   
   ema_strats = list(
-    CAD=create_EMA(tickers_data, "CAD", tickers_config, 
-                   best_ema_params[best_ema_params$ticker == "CAD",]$fast_ema,
-                   best_ema_params[best_ema_params$ticker == "CAD",]$slow_ema, 
+    CAD=create_EMA(tickers_data, "CAD", tickers_config,
+                   best_ema_params[1,]$fast_ema,
+                   best_ema_params[1,]$slow_ema,
                    pos_flat,
-                   best_ema_params[best_ema_params$ticker == "CAD",]$type),
+                   tickers_config["CAD",]$default_strat),
     AUD=create_EMA(tickers_data, "AUD", tickers_config, 
-                   best_ema_params[best_ema_params$ticker == "AUD",]$fast_ema,
-                   best_ema_params[best_ema_params$ticker == "AUD",]$slow_ema, 
+                   best_ema_params[1,]$fast_ema,
+                   best_ema_params[1,]$slow_ema, 
                    pos_flat,
-                   best_ema_params[best_ema_params$ticker == "AUD",]$type)
-    # XAG=create_EMA(tickers_data, "XAG", tickers_config, 
-    #                best_ema_params[best_ema_params$ticker == "XAG",]$fast_ema,
-    #                best_ema_params[best_ema_params$ticker == "XAG",]$slow_ema, 
-    #                pos_flat,a
-    #                best_ema_params[best_ema_params$ticker == "XAG",]$type),
-    # XAU=create_EMA(tickers_data, "XAU", tickers_config, 
-    #                best_ema_params[best_ema_params$ticker == "XAU",]$fast_ema,
-    #                best_ema_params[best_ema_params$ticker == "XAU",]$slow_ema, 
-    #                pos_flat,
-    #                best_ema_params[best_ema_params$ticker == "XAU",]$type)
+                   tickers_config["AUD",]$default_strat),
+    XAG=create_EMA(tickers_data, "XAG", tickers_config,
+                   best_ema_params[1,]$fast_ema,
+                   best_ema_params[1,]$slow_ema,
+                   pos_flat,
+                   tickers_config["XAG",]$default_strat),
+    XAU=create_EMA(tickers_data, "XAU", tickers_config,
+                   best_ema_params[1,]$fast_ema,
+                   best_ema_params[1,]$slow_ema,
+                   pos_flat,
+                   tickers_config["XAU",]$default_strat)
   )
 
   # aggregates
@@ -108,6 +108,8 @@ for (selected_quarter in quarters) {
   
 
 } # end of the loop
+
+colSums(quarter_stats.all.group2[,c("cum_net_pnl", "target_metric")])
 
 write.csv(quarter_stats.all.group2, 
           "output/quarter_stats.all.group2.csv",

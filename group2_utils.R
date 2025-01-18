@@ -9,7 +9,8 @@ quarters = c("2022_Q1", "2022_Q3", "2022_Q4",
 tickers_config = data.frame(
   row.names=c("CAD", "AUD", "XAU", "XAG"),
   transaction_cost = c(10, 10, 15, 10),
-  point_value = c(100000, 100000, 100, 5000)
+  point_value = c(100000, 100000, 100, 5000),
+  default_strat=c("mrev", "mrev", "mrev", "mrev")
 )
 
 load_quarter = function(selected_quarter)
