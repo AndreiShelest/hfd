@@ -9,218 +9,69 @@ library(knitr) # for nicely looking tables in html files
 library(kableExtra) # for even more nicely looking tables in html files
 library(quantmod) # for PnL graphs
 
+source("group2_utils.R")
+source("group2_strats.R")
+
 # lets change the LC_TIME option to English
 Sys.setlocale("LC_TIME", "English")
-
-# mySR function
-mySR <- function(x, scale) {
-  sqrt(scale) * mean(coredata(x), na.rm = TRUE) / 
-                sd(coredata(x), na.rm = TRUE)
-  } 
-
-myCalmarRatio <- function(x, # x = series of returns
-                          # scale parameter = Nt
-                          scale) {
-  scale * mean(coredata(x), na.rm = TRUE) / 
-    maxdrawdown(cumsum(x))$maxdrawdown
-  
-} # end of definition
-
 
 
 # lets define the system time zone as America/New_York (used in the data)
 Sys.setenv(TZ = 'America/New_York')
 
+
+get_quarter_stats = function(selected_quarter, aggr_strat_metrics)
+{
+  quarter_stats <- data.frame(quarter = selected_quarter,
+                              assets.group = 2,
+                              gross_sr = aggr_strat_metrics$gross_sr,
+                              net_sr = aggr_strat_metrics$net_sr,
+                              gross_cr = aggr_strat_metrics$gross_calmar_ratio,
+                              net_cr = aggr_strat_metrics$net_calmar_ratio,
+                              av_n_trades = aggr_strat_metrics$av_n_trades,
+                              cum_gross_pnl = aggr_strat_metrics$cum_gross_pnl,
+                              cum_net_pnl = aggr_strat_metrics$cum_net_pnl,
+                              target_metric = aggr_strat_metrics$target_metric,
+                              stringsAsFactors = FALSE)
+}
+
 # do it simply in a loop on quarters
 
-for (selected_quarter in c("2022_Q1", "2022_Q3", "2022_Q4", 
-                           "2023_Q2", "2023_Q4", 
+for (selected_quarter in c("2022_Q1", "2022_Q3", "2022_Q4",
+                           "2023_Q2", "2023_Q4",
                            "2024_Q1", "2024_Q2")) {
-  
   message(selected_quarter)
   
   # loading the data for a selected quarter from a subdirectory "data""
   
-  filename_ <- paste0("data/data2_", selected_quarter, ".RData")
+  tickers_data <- load_quarter(selected_quarter)
   
-  load(filename_)
+  pos_flat = init_pos_flat(tickers_data)
+  pos_flat = apply_trading_time_assumptions(tickers_data, pos_flat)
   
-  data.group2 <- get(paste0("data2_", selected_quarter))
+  mom_strats = list(
+    CAD=create_EMA(tickers_data, "CAD", tickers_config, 10, 60, pos_flat, 'mom'),
+    AUD=create_EMA(tickers_data, "AUD", tickers_config, 10, 60, pos_flat, 'mom'),
+    XAG=create_EMA(tickers_data, "XAG", tickers_config, 10, 60, pos_flat, 'mom'),
+    XAU=create_EMA(tickers_data, "XAU", tickers_config, 10, 60, pos_flat, 'mom')
+  )
   
-  times_ <- substr(index(data.group2), 12, 19)
+  # mrev_strats = list(
+  #   CAD=create_EMA(tickers_data, "CAD", tickers_config, 10, 60, pos_flat, 'mrev'),
+  #   AUD=create_EMA(tickers_data, "AUD", tickers_config, 10, 60, pos_flat, 'mrev'),
+  #   XAG=create_EMA(tickers_data, "XAG", tickers_config, 10, 60, pos_flat, 'mrev'),
+  #   XAU=create_EMA(tickers_data, "XAU", tickers_config, 10, 60, pos_flat, 'mrev')
+  # )
   
-  # the following common assumptions were defined:
-  # 1.	do not use in calculations the data from the first and last 10 minutes of the session (9:31--9:40 and 15:51--16:00) – put missing values there,
+  # aggregates
+  mom_daily_aggrs = daily_aggregate_strategies(mom_strats)
+  # mrev_daily_aggr = daily_aggregate_strategies(mrev_strats)
   
-  # lets put missing values ofr these periods
-  data.group2["T09:31/T09:40",] <- NA 
-  data.group2["T15:51/T16:00",] <- NA
-  
-  # lets calculate EMA10 and EMA60 for all series
-  data.group2$AUD_EMA10 <- EMA(na.locf(data.group2$AUD), 10)
-  data.group2$AUD_EMA60 <- EMA(na.locf(data.group2$AUD), 60)
-  data.group2$CAD_EMA10 <- EMA(na.locf(data.group2$CAD), 10)
-  data.group2$CAD_EMA60 <- EMA(na.locf(data.group2$CAD), 60)
-  data.group2$XAG_EMA10 <- EMA(na.locf(data.group2$XAG), 10)
-  data.group2$XAG_EMA60 <- EMA(na.locf(data.group2$XAG), 60)
-  data.group2$XAU_EMA10 <- EMA(na.locf(data.group2$XAU), 10)
-  data.group2$XAU_EMA60 <- EMA(na.locf(data.group2$XAU), 60)
-  
-  # put missing value whenever the original price is missing
-  data.group2$AUD_EMA10[is.na(data.group2$AUD)] <- NA
-  data.group2$AUD_EMA60[is.na(data.group2$AUD)] <- NA
-  data.group2$CAD_EMA10[is.na(data.group2$CAD)] <- NA
-  data.group2$CAD_EMA60[is.na(data.group2$CAD)] <- NA
-  data.group2$XAG_EMA10[is.na(data.group2$XAG)] <- NA
-  data.group2$XAG_EMA60[is.na(data.group2$XAG)] <- NA
-  data.group2$XAU_EMA10[is.na(data.group2$XAU)] <- NA
-  data.group2$XAU_EMA60[is.na(data.group2$XAU)] <- NA
-  
-  # lets calculate the position for the MOMENTUM strategy
-  # for each asset separately
-  # if fast MA(t-1) > slow MA(t-1) => pos(t) = 1 [long]
-  # if fast MA(t-1) <= slow MA(t-1) => pos(t) = -1 [short]
-  #  caution! this strategy is always in the market !
-  
-  data.group2$position.AUD.mom <- ifelse(lag.xts(data.group2$AUD_EMA10) >
-                                          lag.xts(data.group2$AUD_EMA60),
-                                        1, -1)
-  
-  data.group2$position.CAD.mom <- ifelse(lag.xts(data.group2$CAD_EMA10) >
-                                            lag.xts(data.group2$CAD_EMA60),
-                                          1, -1)
-  
-  data.group2$position.XAG.mom <- ifelse(lag.xts(data.group2$XAG_EMA10) >
-                                            lag.xts(data.group2$XAG_EMA60),
-                                          1, -1)
-  
-  data.group2$position.XAU.mom <- ifelse(lag.xts(data.group2$XAU_EMA10) >
-                                           lag.xts(data.group2$XAU_EMA60),
-                                         1, -1)
-  
-  
-  # lets apply the remaining assumptions
-  # - exit all positions 15 minutes before the session end, i.e. at 16:45
-  # - do not trade within the first 15 minutes after the break (until 18:15)
-  
-  data.group2$position.AUD.mom[times(times_) > times("16:45:00") &
-                                times(times_) <= times("18:15:00")] <- 0
-  
-  data.group2$position.CAD.mom[times(times_) > times("16:45:00") &
-                                 times(times_) <= times("18:15:00")] <- 0
-  
-  data.group2$position.XAG.mom[times(times_) > times("16:45:00") &
-                                 times(times_) <= times("18:15:00")] <- 0
-  
-  data.group2$position.XAU.mom[times(times_) > times("16:45:00") &
-                                 times(times_) <= times("18:15:00")] <- 0
-  
-  
-  # lets also fill every missing position with the previous one
-  data.group2$position.AUD.mom <- na.locf(data.group2$position.AUD.mom, na.rm = FALSE)
-  data.group2$position.CAD.mom <- na.locf(data.group2$position.CAD.mom, na.rm = FALSE)
-  data.group2$position.XAG.mom <- na.locf(data.group2$position.XAG.mom, na.rm = FALSE)
-  data.group2$position.XAU.mom <- na.locf(data.group2$position.XAU.mom, na.rm = FALSE)
-  
-  
-  # calculating gross pnl - remember to multiply by the point value !!!!
-  data.group2$pnl_gross.AUD.mom <- data.group2$position.AUD.mom * diff.xts(data.group2$AUD) * 100000
-  data.group2$pnl_gross.CAD.mom <- data.group2$position.CAD.mom * diff.xts(data.group2$CAD) * 100000
-  data.group2$pnl_gross.XAU.mom <- data.group2$position.XAU.mom * diff.xts(data.group2$XAU) * 100
-  data.group2$pnl_gross.XAG.mom <- data.group2$position.XAG.mom * diff.xts(data.group2$XAG) * 5000
-  
-  # number of transactions
-  
-  data.group2$ntrans.AUD.mom <- abs(diff.xts(data.group2$position.AUD.mom))
-  data.group2$ntrans.AUD.mom[1] <- 0
-  
-  data.group2$ntrans.CAD.mom <- abs(diff.xts(data.group2$position.CAD.mom))
-  data.group2$ntrans.CAD.mom[1] <- 0
-  
-  data.group2$ntrans.XAG.mom <- abs(diff.xts(data.group2$position.XAG.mom))
-  data.group2$ntrans.XAG.mom[1] <- 0
-  
-  data.group2$ntrans.XAU.mom <- abs(diff.xts(data.group2$position.XAU.mom))
-  data.group2$ntrans.XAU.mom[1] <- 0
-  
-  # net pnl
-  data.group2$pnl_net.AUD.mom <- data.group2$pnl_gross.AUD.mom  -
-    data.group2$ntrans.AUD.mom * 10 # 10$ per transaction
-  
-  data.group2$pnl_net.CAD.mom <- data.group2$pnl_gross.CAD.mom  -
-    data.group2$ntrans.CAD.mom * 10 # 10$ per transaction
-  
-  data.group2$pnl_net.XAG.mom <- data.group2$pnl_gross.XAG.mom  -
-    data.group2$ntrans.XAG.mom * 10 # 10$ per transaction
-    
-  data.group2$pnl_net.XAU.mom <- data.group2$pnl_gross.XAU.mom  -
-    data.group2$ntrans.XAU.mom * 15 # 15$ per transaction
-  
-  
-  # aggregate pnls and number of transactions to daily
-  my.endpoints <- endpoints(data.group2, "days")
-  
-  data.group2.daily <- period.apply(data.group2[,c(grep("pnl", names(data.group2)),
-                                                   grep("ntrans", names(data.group2)))],
-                                    INDEX = my.endpoints, 
-                                    FUN = function(x) colSums(x, na.rm = TRUE))
-  
-  # lets SUM gross and net pnls
-  
-  data.group2.daily$pnl_gross.mom <- 
-    data.group2.daily$pnl_gross.AUD.mom +
-    data.group2.daily$pnl_gross.CAD.mom +
-    data.group2.daily$pnl_gross.XAU.mom +
-    data.group2.daily$pnl_gross.XAG.mom
-  
-  data.group2.daily$pnl_net.mom <- 
-    data.group2.daily$pnl_net.AUD.mom +
-    data.group2.daily$pnl_net.CAD.mom +
-    data.group2.daily$pnl_net.XAU.mom +
-    data.group2.daily$pnl_net.XAG.mom
-  
-  # lets SUM number of transactions (with the same weights)
-  
-  data.group2.daily$ntrans.mom <- 
-    data.group2.daily$ntrans.AUD.mom +
-    data.group2.daily$ntrans.CAD.mom +
-    data.group2.daily$ntrans.XAG.mom +
-    data.group2.daily$ntrans.XAU.mom
-  
-  
-  # summarize the strategy for this quarter
-  
-  # SR
-  grossSR = mySR(x = data.group2.daily$pnl_gross.mom, scale = 252)
-  netSR = mySR(x = data.group2.daily$pnl_net.mom, scale = 252)
-  # CR
-  grossCR = myCalmarRatio(x = data.group2.daily$pnl_gross.mom, scale = 252)
-  netCR = myCalmarRatio(x = data.group2.daily$pnl_net.mom, scale = 252)
-  
-  # average number of transactions
-  av.daily.ntrades = mean(data.group2.daily$ntrans.mom, 
-                          na.rm = TRUE)
-  # PnL
-  grossPnL = sum(data.group2.daily$pnl_gross.mom)
-  netPnL = sum(data.group2.daily$pnl_net.mom)
-  
-  # stat
-  stat = netCR * max(0, log(abs(netPnL/1000)))
+  mom_metrics = get_strategy_metrics(mom_daily_aggrs)
   
   # collecting all statistics for a particular quarter
   
-  quarter_stats <- data.frame(quarter = selected_quarter,
-                              assets.group = 2,
-                              grossSR,
-                              netSR,
-                              grossCR,
-                              netCR,
-                              av.daily.ntrades,
-                              grossPnL,
-                              netPnL,
-                              stat,
-                              stringsAsFactors = FALSE
-  )
+  quarter_stats <- get_quarter_stats(selected_quarter, mom_metrics)
   
   # collect summaries for all quarters
   if(!exists("quarter_stats.all.group2")) quarter_stats.all.group2 <- quarter_stats else
@@ -228,11 +79,11 @@ for (selected_quarter in c("2022_Q1", "2022_Q3", "2022_Q4",
   
   # create a plot of gros and net pnl and save it to png file
   
-  png(filename = paste0("pnl_group2_", selected_quarter, ".png"),
+  png(filename = paste0("output/pnl_group2_", selected_quarter, ".png"),
       width = 1000, height = 600)
   print( # when plotting in a loop you have to use print()
-    plot(cbind(cumsum(data.group2.daily$pnl_gross.mom),
-               cumsum(data.group2.daily$pnl_net.mom)),
+    plot(cbind(cumsum(mom_daily_aggrs$gross_pnl),
+               cumsum(mom_daily_aggrs$net_pnl)),
          multi.panel = FALSE,
          main = paste0("Gross and net PnL for asset group 2 \n quarter ", selected_quarter), 
          col = c("#377EB8", "#E41A1C"),
@@ -245,15 +96,15 @@ for (selected_quarter in c("2022_Q1", "2022_Q3", "2022_Q4",
   dev.off()
   
   # remove all unneeded objects for group 2
-  rm(data.group2, my.endpoints, grossSR, netSR, av.daily.ntrades,
-     grossPnL, netPnL, stat, quarter_stats, data.group2.daily)
-  
+  # rm(data.group2, my.endpoints, grossSR, netSR, av.daily.ntrades,
+  #    grossPnL, netPnL, stat, quarter_stats, data.group2.daily)
+  # 
   gc()
   
 
 } # end of the loop
 
 write.csv(quarter_stats.all.group2, 
-          "quarter_stats.all.group2.csv",
+          "output/quarter_stats.all.group2.csv",
           row.names = FALSE)
 
