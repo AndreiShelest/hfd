@@ -37,9 +37,10 @@ get_quarter_stats = function(selected_quarter, aggr_strat_metrics)
 
 # do it simply in a loop on quarters
 
-for (selected_quarter in c("2022_Q1", "2022_Q3", "2022_Q4",
-                           "2023_Q2", "2023_Q4",
-                           "2024_Q1", "2024_Q2")) {
+best_ema_params = read.csv("output/best_ema_params.csv")
+quarter_stats.all.group2 = NULL
+
+for (selected_quarter in quarters) {
   message(selected_quarter)
   
   # loading the data for a selected quarter from a subdirectory "data""
@@ -49,29 +50,37 @@ for (selected_quarter in c("2022_Q1", "2022_Q3", "2022_Q4",
   pos_flat = init_pos_flat(tickers_data)
   pos_flat = apply_trading_time_assumptions(tickers_data, pos_flat)
   
-  mom_strats = list(
-    CAD=create_EMA(tickers_data, "CAD", tickers_config, 10, 60, pos_flat, 'mom'),
-    AUD=create_EMA(tickers_data, "AUD", tickers_config, 10, 60, pos_flat, 'mom'),
-    XAG=create_EMA(tickers_data, "XAG", tickers_config, 10, 60, pos_flat, 'mom'),
-    XAU=create_EMA(tickers_data, "XAU", tickers_config, 10, 60, pos_flat, 'mom')
+  ema_strats = list(
+    CAD=create_EMA(tickers_data, "CAD", tickers_config, 
+                   best_ema_params[best_ema_params$ticker == "CAD",]$fast_ema,
+                   best_ema_params[best_ema_params$ticker == "CAD",]$slow_ema, 
+                   pos_flat,
+                   best_ema_params[best_ema_params$ticker == "CAD",]$type),
+    AUD=create_EMA(tickers_data, "AUD", tickers_config, 
+                   best_ema_params[best_ema_params$ticker == "AUD",]$fast_ema,
+                   best_ema_params[best_ema_params$ticker == "AUD",]$slow_ema, 
+                   pos_flat,
+                   best_ema_params[best_ema_params$ticker == "AUD",]$type)
+    # XAG=create_EMA(tickers_data, "XAG", tickers_config, 
+    #                best_ema_params[best_ema_params$ticker == "XAG",]$fast_ema,
+    #                best_ema_params[best_ema_params$ticker == "XAG",]$slow_ema, 
+    #                pos_flat,a
+    #                best_ema_params[best_ema_params$ticker == "XAG",]$type),
+    # XAU=create_EMA(tickers_data, "XAU", tickers_config, 
+    #                best_ema_params[best_ema_params$ticker == "XAU",]$fast_ema,
+    #                best_ema_params[best_ema_params$ticker == "XAU",]$slow_ema, 
+    #                pos_flat,
+    #                best_ema_params[best_ema_params$ticker == "XAU",]$type)
   )
-  
-  # mrev_strats = list(
-  #   CAD=create_EMA(tickers_data, "CAD", tickers_config, 10, 60, pos_flat, 'mrev'),
-  #   AUD=create_EMA(tickers_data, "AUD", tickers_config, 10, 60, pos_flat, 'mrev'),
-  #   XAG=create_EMA(tickers_data, "XAG", tickers_config, 10, 60, pos_flat, 'mrev'),
-  #   XAU=create_EMA(tickers_data, "XAU", tickers_config, 10, 60, pos_flat, 'mrev')
-  # )
-  
+
   # aggregates
-  mom_daily_aggrs = daily_aggregate_strategies(mom_strats)
-  # mrev_daily_aggr = daily_aggregate_strategies(mrev_strats)
-  
-  mom_metrics = get_strategy_metrics(mom_daily_aggrs)
+  ema_daily_aggr = daily_aggregate_strategies(ema_strats)
+
+  ema_metrics = get_strategy_metrics(ema_daily_aggr)
   
   # collecting all statistics for a particular quarter
   
-  quarter_stats <- get_quarter_stats(selected_quarter, mom_metrics)
+  quarter_stats <- get_quarter_stats(selected_quarter, ema_metrics)
   
   # collect summaries for all quarters
   if(!exists("quarter_stats.all.group2")) quarter_stats.all.group2 <- quarter_stats else
@@ -82,8 +91,8 @@ for (selected_quarter in c("2022_Q1", "2022_Q3", "2022_Q4",
   png(filename = paste0("output/pnl_group2_", selected_quarter, ".png"),
       width = 1000, height = 600)
   print( # when plotting in a loop you have to use print()
-    plot(cbind(cumsum(mom_daily_aggrs$gross_pnl),
-               cumsum(mom_daily_aggrs$net_pnl)),
+    plot(cbind(cumsum(ema_daily_aggr$gross_pnl),
+               cumsum(ema_daily_aggr$net_pnl)),
          multi.panel = FALSE,
          main = paste0("Gross and net PnL for asset group 2 \n quarter ", selected_quarter), 
          col = c("#377EB8", "#E41A1C"),
@@ -95,10 +104,6 @@ for (selected_quarter in c("2022_Q1", "2022_Q3", "2022_Q4",
   )
   dev.off()
   
-  # remove all unneeded objects for group 2
-  # rm(data.group2, my.endpoints, grossSR, netSR, av.daily.ntrades,
-  #    grossPnL, netPnL, stat, quarter_stats, data.group2.daily)
-  # 
   gc()
   
 

@@ -4,7 +4,7 @@ library(tseries)
 library(TTR)
 
 
-create_EMA = function(quarter_data, ticker, ticker_config, fast, slow, pos_flat, type)
+create_EMA = function(quarter_data, ticker, ticker_config, fast, slow, pos_flat, type, strat_name="")
 {
   ticker_data = quarter_data[, ticker]
   trans_cost = ticker_config[ticker, "transaction_cost"]
@@ -41,6 +41,9 @@ create_EMA = function(quarter_data, ticker, ticker_config, fast, slow, pos_flat,
   
   # try keeping this interface across strategies
   result_data = list(
+    fast_ema = fast,
+    slow_ema = slow,
+    strat_name = strat_name,
     get_positions=function() { strat_pos },
     get_n_trans = function() { n_trans },
     get_gross_pnl = function() { gross_pnl },
