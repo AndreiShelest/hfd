@@ -7,31 +7,14 @@ library(glue)
 source("https://raw.githubusercontent.com/ptwojcik/HFD/master/functions_plotHeatmap.R")
 
 
-plot_pnls = function(aggr_data, selected_quarter)
-{
-  myTheme <- chart_theme()
-  myTheme$col$line.col <- "darkblue"
-  
-  plot(cbind(cumsum(aggr_data$gross_pnl),
-             cumsum(aggr_data$net_pnl)),
-       multi.panel = FALSE,
-       main = paste0("Gross and net PnL for asset group 2 \n quarter ", selected_quarter), 
-       col = c("#377EB8", "#E41A1C"),
-       major.ticks = "weeks", 
-       grid.ticks.on = "weeks",
-       grid.ticks.lty = 3,
-       legend.loc = "topleft",
-       cex = 1)
-}
-
-
 Sys.setlocale("LC_TIME", "English")
 Sys.setenv(TZ = 'America/New_York')
 
-search_for_ema = function()
+search_for_ema_strats = function(strats, strats_idx)
 {
   ema_metrics_df = NULL
   
+  print(strats)
 
   for(selected_quarter in quarters)
   {
@@ -42,23 +25,23 @@ search_for_ema = function()
     
     # EMA
     
-    for(fast_ema in seq(10, 110, 10))
+    for(fast_ema in seq(10, 110, 5))
     {
-      for(slow_ema in seq(60, 500, 40))
+      for(slow_ema in seq(60, 500, 20))
       {
         if(fast_ema >= slow_ema)
         {
           next
         }
         
-        print(glue("quarter={selected_quarter}. EMA: fast={fast_ema}, slow={slow_ema}."))
+        print(glue("idx={strats_idx}, quarter={selected_quarter}. EMA: fast={fast_ema}, slow={slow_ema}."))
         
         ema_strats = list()
 
         for(ticker in row.names(tickers_config))
         {
           ema_strat = create_EMA(
-            tickers_data, ticker, tickers_config, fast_ema, slow_ema, pos_flat, tickers_config[ticker,]$default_strat)
+            tickers_data, ticker, tickers_config, fast_ema, slow_ema, pos_flat, strats[1, ticker])
           ema_strats[[ticker]] = ema_strat
         }
         
@@ -68,7 +51,6 @@ search_for_ema = function()
         print(glue("net_pnl={ema_metrics$cum_net_pnl}, tm={ema_metrics$target_metric}"))
 
         summary_df = cbind(quarter = c(selected_quarter),
-                           strategy = c('mixed'),
                            fast_ema,
                            slow_ema,
                            data.frame(ema_metrics))
@@ -88,40 +70,50 @@ search_for_ema = function()
   return(ema_metrics_df)
 }
 
-select_ema_param = function(strat_type, ema_metrics_df)
+select_ema_param = function(ema_metrics_df)
 {
   metrics_aggr = aggregate(cum_net_pnl ~ fast_ema + slow_ema, data=ema_metrics_df, sum) # sum by each quarter
-  print(metrics_aggr)
   best_metrics = metrics_aggr[which.max(metrics_aggr$cum_net_pnl),]
   
-  print(best_metrics)
-  
-  return(list(
+  return(data.frame(list(
     fast_ema=best_metrics$fast_ema,
-    slow_ema=best_metrics$slow_ema))
+    slow_ema=best_metrics$slow_ema,
+    cum_net_pnl=best_metrics$cum_net_pnl)))
 }
 
-select_all_ticker_params = function(ema_metrics_df)
+search_for_ema = function()
 {
-  selected_ema_params = NULL
+  strategies_perms = get_strategies_perms()
   
-  mixed_params = select_ema_param('mixed', ema_metrics_df)
-  print(mixed_params)
-  mixed_params_df = data.frame(type='mixed', mixed_params)
+  best_ema_params_df = NULL
   
-  return(mixed_params_df)
+  for(i in 1:nrow(strategies_perms))
+  {
+    strats = strategies_perms[i, ]
+    
+    ema_metrics_df = search_for_ema_strats(strats, i)
+    strats_ema_params = select_ema_param(ema_metrics_df)
+    
+    best_ema_params_df = rbind(
+      best_ema_params_df, 
+      data.frame(
+        strats,
+        strats_ema_params
+      ))
+  }
+  
+  return(best_ema_params_df)
 }
 
+best_ema_params_df = search_for_ema()
+best_ema_params = best_ema_params_df[which.max(best_ema_params_df$cum_net_pnl),]
 
-ema_metrics_df = search_for_ema()
-write.csv(ema_metrics_df,
-          "output/ema_metrics.csv",
-          row.names = FALSE)
 # ema_metrics_df = read.csv("output/ema_metrics.csv")
 
-best_ema_params = select_all_ticker_params(ema_metrics_df)
 
-best_ema_params
+# write.csv(ema_metrics_df,
+#           "output/ema_metrics.csv",
+#           row.names = FALSE)
 write.csv(best_ema_params,
           "output/best_ema_params.csv",
           row.names=FALSE)

@@ -55,22 +55,22 @@ for (selected_quarter in quarters) {
                    best_ema_params[1,]$fast_ema,
                    best_ema_params[1,]$slow_ema,
                    pos_flat,
-                   tickers_config["CAD",]$default_strat),
+                   best_ema_params[1, "CAD"]),
     AUD=create_EMA(tickers_data, "AUD", tickers_config, 
                    best_ema_params[1,]$fast_ema,
                    best_ema_params[1,]$slow_ema, 
                    pos_flat,
-                   tickers_config["AUD",]$default_strat),
+                   best_ema_params[1, "AUD"]),
     XAG=create_EMA(tickers_data, "XAG", tickers_config,
                    best_ema_params[1,]$fast_ema,
                    best_ema_params[1,]$slow_ema,
                    pos_flat,
-                   tickers_config["XAG",]$default_strat),
+                   best_ema_params[1, "XAG"]),
     XAU=create_EMA(tickers_data, "XAU", tickers_config,
                    best_ema_params[1,]$fast_ema,
                    best_ema_params[1,]$slow_ema,
                    pos_flat,
-                   tickers_config["XAU",]$default_strat)
+                   best_ema_params[1, "XAU"])
   )
 
   # aggregates

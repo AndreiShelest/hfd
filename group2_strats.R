@@ -3,6 +3,7 @@ source("group2_utils.R")
 library(tseries)
 library(TTR)
 
+source("https://raw.githubusercontent.com/ptwojcik/HFD/master/function_positionVB_new.R")
 
 create_EMA = function(quarter_data, ticker, ticker_config, fast, slow, pos_flat, type, strat_name="")
 {
@@ -43,6 +44,67 @@ create_EMA = function(quarter_data, ticker, ticker_config, fast, slow, pos_flat,
   result_data = list(
     fast_ema = fast,
     slow_ema = slow,
+    strat_name = strat_name,
+    get_positions=function() { strat_pos },
+    get_n_trans = function() { n_trans },
+    get_gross_pnl = function() { gross_pnl },
+    get_net_pnl = function() { net_pnl },
+    get_daily_aggregates = function() { aggr_data }
+  )
+  
+  return(result_data)
+}
+
+
+create_vol_breakout = function(
+    quarter_data, 
+    ticker, 
+    ticker_config,
+    signal_ema,
+    slow_ema,
+    vol_sd,
+    mult,
+    pos_flat, 
+    type, 
+    strat_name="")
+{
+  ticker_data = quarter_data[, ticker]
+  trans_cost = ticker_config[ticker, "transaction_cost"]
+  point_val = ticker_config[ticker, "point_value"]
+  
+  signal_values = EMA(na.locf(ticker_data), n=signal_ema)
+  slow_values = EMA(na.locf(ticker_data), n=slow_ema)
+  vol_ <- runsd(na.locf(ticker_data, na.rm = FALSE), vol_sd, endrule = "NA", align = "right")
+  
+  signal_values[is.na(ticker_data)] = NA
+  slow_values[is.na(ticker_data)] = NA
+  vol_[is.na(ticker_data)] = NA
+  
+  if (type != 'mom' && type != 'mrev')
+  {
+    stop("Incorrect type.")
+  }
+  
+  strat_pos = positionVB_new(signal = signal_values,
+                             lower = slow_values - mult * vol_,
+                             upper = slow_values + mult * vol_,
+                             pos_flat = coredata(pos_flat),
+                             strategy = type # important !!!
+  )
+  
+  n_trans=get_number_of_transactions(strat_pos)
+  
+  gross_pnl = get_gross_pnl(ticker_data, ticker, strat_pos, point_val)
+  net_pnl = get_net_pnl(ticker_data, ticker, gross_pnl, n_trans, trans_cost)
+  
+  aggr_data = aggregate_daily(gross_pnl, net_pnl, n_trans)
+  
+  # try keeping this interface across strategies
+  result_data = list(
+    signal_ema = signal_ema,
+    slow_ema = slow_ema,
+    vol_sd = vol_sd,
+    mult = mult,
     strat_name = strat_name,
     get_positions=function() { strat_pos },
     get_n_trans = function() { n_trans },
