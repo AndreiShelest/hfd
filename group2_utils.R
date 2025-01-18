@@ -2,6 +2,65 @@ library(xts)
 library(chron)
 library(lubridate)
 
+tickers_config = data.frame(
+  row.names=c("CAD", "AUD", "XAU", "XAG"),
+  transaction_cost = c(10, 10, 15, 10),
+  point_value = c(100000, 100000, 100, 5000)
+)
+
+load_quarter = function(selected_quarter)
+{
+  filename_ = paste0("data/data2_", selected_quarter, ".RData")
+  load(filename_)
+  
+  ticker_data = get(paste0("data2_", selected_quarter))
+  return(ticker_data)
+}
+
+daily_aggregate_strategies = function(strats)
+{
+  grand_gross_pnl = NULL
+  grand_net_pnl = NULL
+  grand_n_trans = NULL
+  
+  for(strat in strats)
+  {
+    d_aggr = strat$get_daily_aggregates()
+    
+    if(is.null(grand_gross_pnl))
+    {
+      grand_gross_pnl = d_aggr$gross_pnl
+    }
+    else
+    {
+      grand_gross_pnl = grand_gross_pnl + d_aggr$gross_pnl
+    }
+    
+    if(is.null(grand_net_pnl))
+    {
+      grand_net_pnl = d_aggr$net_pnl
+    }
+    else
+    {
+      grand_net_pnl = grand_net_pnl + d_aggr$net_pnl
+    }
+    
+    if(is.null(grand_n_trans))
+    {
+      grand_n_trans = d_aggr$n_trans
+    }
+    else
+    {
+      grand_n_trans = grand_n_trans + d_aggr$n_trans
+    }
+  }
+  
+  daily_aggr = list(
+    gross_pnl = grand_gross_pnl,
+    net_pnl = grand_net_pnl,
+    n_trans = grand_n_trans
+  )
+}
 
 init_pos_flat = function(quarter_data)
 {
@@ -31,7 +90,7 @@ apply_trading_time_assumptions = function(quarter_data, pos_flat) # ticker_data
   problematic_days = setdiff(
     format(index(pos_flat[dweek_ == 5]), "%Y-%m-%d"),
     regular_days)
-  print(problematic_days)
+  # print(problematic_days)
   pos_flat[problematic_days]["T15:51/T18:10"] = 1
   
   return(pos_flat)

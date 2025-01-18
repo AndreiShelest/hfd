@@ -1,12 +1,9 @@
 source("group2_strats.R")
+source('group2_utils.R')
 
 library(quantmod)
 
-tickers_config = data.frame(
-  row.names=c("CAD", "AUD", "XAU", "XAG"),
-  transaction_cost = c(10, 10, 15, 10),
-  point_value = c(100000, 100000, 100, 5000)
-)
+
 
 plot_pnls = function(aggr_data, selected_quarter)
 {
@@ -23,15 +20,6 @@ plot_pnls = function(aggr_data, selected_quarter)
        grid.ticks.lty = 3,
        legend.loc = "topleft",
        cex = 1)
-}
-
-load_quarter = function(selected_quarter)
-{
-  filename_ = paste0("data/data2_", selected_quarter, ".RData")
-  load(filename_)
-  
-  ticker_data = get(paste0("data2_", selected_quarter))
-  return(ticker_data)
 }
 
 # test utils

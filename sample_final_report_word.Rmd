@@ -1,11 +1,12 @@
 ---
 title: "Quantitative strategies on High Frequency Data"
-subtitle: "submission of research project -- SAMPLE REPORT"
-author: "Team members: Author nr 1 and Author nr 2"
+author: 'Team members: Author nr 1 and Author nr 2'
 date: "academic year 2024/2025"
-output: 
+output:
+  pdf_document: default
   word_document:
     df_print: kable
+subtitle: "submission of research project -- SAMPLE REPORT"
 fontsize: 14pt
 ---
 
@@ -185,7 +186,7 @@ your comments required !!!
 ## PnL of results for **group 2** -- quarter 2022Q1
 
 ```{r, echo = F, out.width ='100%'}
-knitr::include_graphics("pnl_group2_2022_Q1.png")
+knitr::include_graphics("output/pnl_group2_2022_Q1.png")
 
 ```
 
@@ -198,7 +199,7 @@ your comments required !!!
 ## PnL of results for **group 2** -- quarter 2022Q3
 
 ```{r, echo = F, out.width ='100%'}
-knitr::include_graphics("pnl_group2_2022_Q3.png")
+knitr::include_graphics("output/pnl_group2_2022_Q3.png")
 
 ```
 
@@ -207,7 +208,7 @@ your comments required !!!
 ## PnL of results for **group 2** -- quarter 2022Q4
 
 ```{r, echo = F, out.width ='100%'}
-knitr::include_graphics("pnl_group2_2022_Q4.png")
+knitr::include_graphics("output/pnl_group2_2022_Q4.png")
 
 ```
 
@@ -220,7 +221,7 @@ your comments required !!!
 ## PnL of results for **group 2** -- quarter 2023Q2
 
 ```{r, echo = F, out.width ='100%'}
-knitr::include_graphics("pnl_group2_2023_Q2.png")
+knitr::include_graphics("output/pnl_group2_2023_Q2.png")
 
 ```
 
@@ -234,7 +235,7 @@ your comments required !!!
 ## PnL of results for **group 2** -- quarter 2023Q4
 
 ```{r, echo = F, out.width ='100%'}
-knitr::include_graphics("pnl_group2_2023_Q4.png")
+knitr::include_graphics("output/pnl_group2_2023_Q4.png")
 
 ```
 
@@ -244,7 +245,7 @@ your comments required !!!
 ## PnL of results for **group 2** -- quarter 2024Q1
 
 ```{r, echo = F, out.width ='100%'}
-knitr::include_graphics("pnl_group2_2024_Q1.png")
+knitr::include_graphics("output/pnl_group2_2024_Q1.png")
 
 ```
 
@@ -253,7 +254,7 @@ your comments required !!!
 ## PnL of results for **group 2** -- quarter 2024Q2
 
 ```{r, echo = F, out.width ='100%'}
-knitr::include_graphics("pnl_group2_2024_Q2.png")
+knitr::include_graphics("output/pnl_group2_2024_Q2.png")
 
 ```
 
