@@ -1,12 +1,14 @@
 ---
 title: "Quantitative strategies on High Frequency Data"
-author: 'Team members: Author nr 1 and Author nr 2'
+author: "Team members: Andrei Shelest and Nietali Kaliyev"
 date: "academic year 2024/2025"
 output:
   pdf_document: default
   word_document:
     df_print: kable
-subtitle: "submission of research project -- SAMPLE REPORT"
+  html_document:
+    df_print: paged
+subtitle: "presentation (in-sample quarters)"
 fontsize: 14pt
 ---
 
@@ -151,12 +153,7 @@ your comments required !!!
 
 
 
-# Group 2 -- summary of results (including out-of-sample)
-
-## Finally selected strategy for group 2
-
-Provide **all the details** (approach and a set of **final parameters**) for assets from **group 2**.
-(e.g. momentum strategy, cross over of two exponential moving averages EMA10 and EMA60 applied to EVERY single asset separately and then putting individual results into the portfolio).
+# Group 2 -- summary of results (only in-sample)
 
 <!-- here you can include code chunk that applies the strategy for group 2 and calculates all the summary statistics
 -->
@@ -167,11 +164,55 @@ Provide **all the details** (approach and a set of **final parameters**) for ass
 source("apply_my_strategy_group2.R")
 ```
 
+## Finally selected strategy for group 2
+
+<!-- Provide **all the details** (approach and a set of **final parameters**) for assets from **group 2**. -->
+<!-- (e.g. momentum strategy, cross over of two exponential moving averages EMA10 and EMA60 applied to EVERY single asset separately and then putting individual results into the portfolio). -->
+
+### Approach to strategy search
+
+The approach to finding parameters of entry is the following:
+
+- First of all, consider combinations of strategies (momentum, mean-reverting), overall 16 combinations for four instruments.
+
+- For each combination (for example, all mean-reverting strategies), analyze each quarter separately.
+
+- In each quarter, iterate through the space of strategy parameters.
+
+  - For a given set of parameters, create a strategy with entry separately for each instrument.
+
+  - Aggregate daily results for strategies in one portfolio (sum up gross/net pnl and number of transactions). For example, add daily gross pnl values of EMA(10, 60) for AUD, CAD, XAU, XAG. 
+
+  - Calculate statistics for this combination and remember it, combining all statistics for each set parameters and each quarter in one data frame.
+
+- Select such a set of parameters that the sum of cumNetPnL across all quarters is the largest. Output this set as "the best strategy".
+
+Firstly, I searched for best parameters for 2EMA-crossover, and the best parameters were for the case when all strategies are mean-reverting.
+
+Then, I decided to test volatility-breakout strategies, but only when all strategies are mean-reverting, to save time and based on 2EMA-crossover prediction.
+
+Volatility-breakout strategy uses signal EMA to check for the breaches of the bands, defined by slow EMA and running volatility (standard deviation), multiplied by some number. So, each set consists of four parameters.
+
+### Strategy parameters
+
+```{r, echo = F}
+kable(best_ema_params, 
+          "markdown", 
+          digits = 2,
+          align = "r")
+
+kable(best_vb_params, 
+          "markdown", 
+          digits = 2,
+          align = "r")
+```
+
+Volatility-breakout strategy is chosen as the best.
+
 
 ## Summary of results for group 2
 
 ```{r, echo = F}
-names(quarter_stats.all.group2)[5] <- "av.ntrades"
 kable(quarter_stats.all.group2[, -2], 
                     "markdown", 
                     digits = 2,
@@ -181,7 +222,7 @@ kable(quarter_stats.all.group2[, -2],
 # https://haozhu233.github.io/kableExtra/awesome_table_in_html.html
 ```
 
-your comments required !!!
+Overall, the strategy managed to achieve positive net PnL in every quarter without trading too much, which I consider to be a good result.
 
 ## PnL of results for **group 2** -- quarter 2022Q1
 
@@ -190,11 +231,11 @@ knitr::include_graphics("output_group2/pnl_group2_2022_Q1.png")
 
 ```
 
-your comments required !!!
+Strategy gained traction at the end of the quarter. Rather high volatility.
 
-## PnL of results for **group 2** -- quarter 2022Q2
+<!-- ## PnL of results for **group 2** -- quarter 2022Q2 -->
 
-your comments required !!!
+<!-- your comments required !!! -->
 
 ## PnL of results for **group 2** -- quarter 2022Q3
 
@@ -203,7 +244,7 @@ knitr::include_graphics("output_group2/pnl_group2_2022_Q3.png")
 
 ```
 
-your comments required !!!
+PnL is mostly increasing. Volatility even higher.
 
 ## PnL of results for **group 2** -- quarter 2022Q4
 
@@ -212,7 +253,7 @@ knitr::include_graphics("output_group2/pnl_group2_2022_Q4.png")
 
 ```
 
-your comments required !!!
+Only last month brought increase in PnL. Volatility is somewhat smaller.
 
 ## PnL of results for **group 2** -- quarter 2023Q1
 
@@ -225,12 +266,12 @@ knitr::include_graphics("output_group2/pnl_group2_2023_Q2.png")
 
 ```
 
-your comments required !!!
+PnL mostly increased, but with a setback in the middle of the quarter. High volatility.
 
-## PnL of results for **group 2** -- quarter 2023Q3
+<!-- ## PnL of results for **group 2** -- quarter 2023Q3 -->
 
 
-your comments required !!!
+<!-- your comments required !!! -->
 
 ## PnL of results for **group 2** -- quarter 2023Q4
 
@@ -239,7 +280,7 @@ knitr::include_graphics("output_group2/pnl_group2_2023_Q4.png")
 
 ```
 
-your comments required !!!
+Mostly flat and high volatile PnL, with gains at the end of the quarter only.
 
 
 ## PnL of results for **group 2** -- quarter 2024Q1
@@ -249,7 +290,7 @@ knitr::include_graphics("output_group2/pnl_group2_2024_Q1.png")
 
 ```
 
-your comments required !!!
+Volatility is less pronounced, but a huge drawdown in march is present.
 
 ## PnL of results for **group 2** -- quarter 2024Q2
 
@@ -258,18 +299,20 @@ knitr::include_graphics("output_group2/pnl_group2_2024_Q2.png")
 
 ```
 
-your comments required !!!
+Again, volatility is less pronounced, and again a drawdown, now in the middle of the quarter.
 
-## PnL of results for **group 2** -- quarter 2024Q3
-
-
-your comments required !!!
-
-## PnL of results for **group 2** -- quarter 2024Q4
+<!-- ## PnL of results for **group 2** -- quarter 2024Q3 -->
 
 
-your comments required !!!
+<!-- your comments required !!! -->
+
+<!-- ## PnL of results for **group 2** -- quarter 2024Q4 -->
+
+
+<!-- your comments required !!! -->
 
 # Summary and conclusions
 
-Here you should include a summary of obtained results and some conclusions.
+<!-- Here you should include a summary of obtained results and some conclusions. -->
+
+For group 2, the volatility-breakout strategy showed decent results on in-sample data. The main features are: rather high values of signal EMA and slow EMA; rather high volatility; large drawdowns are possible.
