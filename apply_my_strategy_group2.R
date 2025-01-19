@@ -38,6 +38,42 @@ get_quarter_stats = function(selected_quarter, aggr_strat_metrics)
 # do it simply in a loop on quarters
 
 best_ema_params = read.csv("output/best_ema_params.csv")
+best_vb_params = read.csv("output/best_vb_params.csv")
+
+create_ema_strats = function(tickers_data, tickers_config, pos_flat)
+{
+  strats = list()
+  
+  for(ticker in row.names(tickers_config))
+  {
+    strats[[ticker]] = create_EMA(tickers_data, ticker, tickers_config,
+                                  best_ema_params[1,]$fast_ema,
+                                  best_ema_params[1,]$slow_ema,
+                                  pos_flat,
+                                  best_ema_params[1, ticker])
+  }
+  
+  return(strats)
+}
+
+create_vb_strats = function(tickers_data, tickers_config, pos_flat)
+{
+  strats = list()
+  
+  for(ticker in row.names(tickers_config))
+  {
+    strats[[ticker]] = create_vol_breakout(tickers_data, ticker, tickers_config,
+                                           best_vb_params[1,]$signal_ema,
+                                           best_vb_params[1,]$slow_ema,
+                                           best_vb_params[1,]$vol_sd,
+                                           best_vb_params[1,]$mult,
+                                           pos_flat,
+                                           best_vb_params[1, ticker])
+  }
+  
+  return(strats)
+}
+
 quarter_stats.all.group2 = NULL
 
 for (selected_quarter in quarters) {
@@ -50,37 +86,16 @@ for (selected_quarter in quarters) {
   pos_flat = init_pos_flat(tickers_data)
   pos_flat = apply_trading_time_assumptions(tickers_data, pos_flat)
   
-  ema_strats = list(
-    CAD=create_EMA(tickers_data, "CAD", tickers_config,
-                   best_ema_params[1,]$fast_ema,
-                   best_ema_params[1,]$slow_ema,
-                   pos_flat,
-                   best_ema_params[1, "CAD"]),
-    AUD=create_EMA(tickers_data, "AUD", tickers_config, 
-                   best_ema_params[1,]$fast_ema,
-                   best_ema_params[1,]$slow_ema, 
-                   pos_flat,
-                   best_ema_params[1, "AUD"]),
-    XAG=create_EMA(tickers_data, "XAG", tickers_config,
-                   best_ema_params[1,]$fast_ema,
-                   best_ema_params[1,]$slow_ema,
-                   pos_flat,
-                   best_ema_params[1, "XAG"]),
-    XAU=create_EMA(tickers_data, "XAU", tickers_config,
-                   best_ema_params[1,]$fast_ema,
-                   best_ema_params[1,]$slow_ema,
-                   pos_flat,
-                   best_ema_params[1, "XAU"])
-  )
+  strats = create_vb_strats(tickers_data, tickers_config, pos_flat)
 
   # aggregates
-  ema_daily_aggr = daily_aggregate_strategies(ema_strats)
+  daily_aggr = daily_aggregate_strategies(strats)
 
-  ema_metrics = get_strategy_metrics(ema_daily_aggr)
+  metrics = get_strategy_metrics(daily_aggr)
   
   # collecting all statistics for a particular quarter
   
-  quarter_stats <- get_quarter_stats(selected_quarter, ema_metrics)
+  quarter_stats <- get_quarter_stats(selected_quarter, metrics)
   
   # collect summaries for all quarters
   if(!exists("quarter_stats.all.group2")) quarter_stats.all.group2 <- quarter_stats else
@@ -91,8 +106,8 @@ for (selected_quarter in quarters) {
   png(filename = paste0("output/pnl_group2_", selected_quarter, ".png"),
       width = 1000, height = 600)
   print( # when plotting in a loop you have to use print()
-    plot(cbind(cumsum(ema_daily_aggr$gross_pnl),
-               cumsum(ema_daily_aggr$net_pnl)),
+    plot(cbind(cumsum(daily_aggr$gross_pnl),
+               cumsum(daily_aggr$net_pnl)),
          multi.panel = FALSE,
          main = paste0("Gross and net PnL for asset group 2 \n quarter ", selected_quarter), 
          col = c("#377EB8", "#E41A1C"),

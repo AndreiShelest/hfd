@@ -2,6 +2,7 @@ source("group2_utils.R")
 
 library(tseries)
 library(TTR)
+library(caTools)
 
 source("https://raw.githubusercontent.com/ptwojcik/HFD/master/function_positionVB_new.R")
 
@@ -28,6 +29,9 @@ create_EMA = function(quarter_data, ticker, ticker_config, fast, slow, pos_flat,
   {
     strat_pos = strat_pos * -1
   }
+  
+  # print(strat_pos[1:100,])
+  
   
   
   strat_pos[pos_flat == 1] = 0
@@ -85,13 +89,22 @@ create_vol_breakout = function(
     stop("Incorrect type.")
   }
   
+  
+  vb_type = type
+  if(type == "mrev")
+  {
+    vb_type = "mr"
+  }
+  
   strat_pos = positionVB_new(signal = signal_values,
                              lower = slow_values - mult * vol_,
                              upper = slow_values + mult * vol_,
                              pos_flat = coredata(pos_flat),
-                             strategy = type # important !!!
+                             strategy = vb_type # important !!!
   )
   
+  strat_pos = xts(strat_pos, order.by=index(signal_values))
+
   n_trans=get_number_of_transactions(strat_pos)
   
   gross_pnl = get_gross_pnl(ticker_data, ticker, strat_pos, point_val)
