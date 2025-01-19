@@ -1,13 +1,13 @@
 ---
 title: "Quantitative strategies on High Frequency Data"
-author: "Team members: Andrei Shelest and Nietali Kaliyev"
+author: "Team members: Andrei Shelest and Niyetali Kaliyev"
 date: "academic year 2024/2025"
 output:
-  pdf_document: default
-  word_document:
-    df_print: kable
   html_document:
     df_print: paged
+  word_document:
+    df_print: kable
+  pdf_document: default
 subtitle: "presentation (in-sample quarters)"
 fontsize: 14pt
 ---
@@ -25,19 +25,45 @@ install.packages("kableExtra")
 
 
 # Approaches undertaken
+For the first group of assets, we considered the implementation and evaluation of Moving Averages (MA) and Volatility Breakout models across distinct the given indices, namely Nasdaq and SP500. Each strategy was tailored to extract meaningful signals based on the unique characteristics of the asset classes. The common assumptions were:
 
-This part should describe **with all the details** what particular methods you used, all entry/exit techniques considered, all additional assumptions.
+- do not use in calculations the data from the first and last 10 minutes of the session (9:31-9:40 and 15:51-16:00) – put missing values there,
+- do not hold positions overnight (exit all positions 20 minutes before the session end, i.e. at 15:40),
+- do not trade within the first 25 minutes of stocks quotations (9:31-9:55), but DO use the data for 9:41-9:55 in calculations of signal, volatility, etc.
 
-For **each group of assets separately** You should also explain **WHAT different parameters** you considered (e.g. memories of moving averages, types of moving averages, types of volatility measures, memory of volatility measures, types of additional indicators, memories of additional indicators, etc.), what (if any) additional filtering rules you applied.
+Regarding the specifics of our projects, we considered combinations of strategies (momentum, mean-reverting) for 2 assets, and for each combination the quarters were testes separately (for each quarter, iterate through the space of strategy parameters). In addition, various lenghts of memories for both, MAs and Volatility measures were taken into account. As an instance, for the crossover of MAs: fastEMA looped through 10, 15, 20, 30, 45, 60, 75 minutes, while slow EMA tried 60, 90, 120, 150, 180, 210 minutes. The same method was used for the singlr Volatility Break-out model, i.e. signalEMA in 10, 15, 20, 30, 45 minutes; slowEMA in 60, 90, 120, 150, 180 minutes; volat.sd in 60, 90, 120 minutes; and a multiplier among 1, 1.5, 2, 2.5, 3. It is worth mentioning that a  systematic grid search combined with sensitivity analysis was conducted (Heatmaps were used to visualize the effectiveness of parameter combinations on, for example, memory lengths and net PnL.)Obviously, we also made sure that we do not trade during the weekends.
 
-You should also explain with details **HOW** you searched for the best combination of parameters for a particular group of assets.
+Finally, we the evaluated our strategies based on gross/net SR, CR and PnLs. We selected such a set of parameters that had the highest sum of cumNetPnL across all quarters. Consequently, these parameters assembled our best strategy.
 
+For this group of assets, the best parameters for 2EMA-crossover were for the case when all strategies are Momentum. The same was observed for Volatility breakout strategy.
+
+-Note: Volatility-breakout strategy uses signal EMA to check for the breaches of the bands, defined by slow EMA and running volatility (standard deviation), multiplied by some number. So, each set consists of four parameters.
+
+
+### Strategy parameters
+
+```{r, echo = F}
+kable(g1_params_EMA, 
+          "markdown", 
+          digits = 2,
+          align = "r")
+
+kable(g1_params_vol, 
+          "markdown", 
+          digits = 2,
+          align = "r")
+```
+
+As we can see, the Volatility-breakout strategy slightly outperforms its peer. Thus, Volatility-Breakout is chosen as out best strategy.
 # Group 1 -- summary of results (including out-of-sample)
 
 ## Finally selected strategy for group 1
 
-Provide **all the details** (approach and a set of **final parameters**) for assets from **group 1**.
-(e.g. momentum strategy, cross over of two exponential moving averages EMA10 and EMA60, additional filtering, methods or indicators used).
+Our winner strategy had the following parameters: 
+- Momentum strategy
+- Single Volatility Break-out technique
+- Slow EMA 120
+- Rolling standard dev. 90
 
 
 <!-- here you can include code chunk that applies the strategy for group 1 and calculates all the summary statistics
@@ -46,32 +72,19 @@ Provide **all the details** (approach and a set of **final parameters**) for ass
 ```{r, echo = F, warning = F, message = F}
 # here you can refer to the R codes that apply the strategy
 # for asset group 1 to all quarters (in a loop)
-source("apply_my_strategy_group1.R")
+source("apply_vol_strat.R")
 ```
 
 ## Summary of results for group 1
 
-```{r, echo = F}
-names(quarter_stats.all.group1)[5] <- "av.ntrades"
-kable(quarter_stats.all.group1[, -2], 
-                    "markdown", 
-                    digits = 2,
-                    align = "r")
-
-# more options here:
-# https://haozhu233.github.io/kableExtra/awesome_table_in_html.html
-```
-
-your comments required !!!
-
 ## PnL of results for **group 1** -- quarter 2022Q1
 
 ```{r, echo = F, out.width ='100%'}
-knitr::include_graphics("pnl_group1_2022_Q1.png")
+knitr::include_graphics("output_group1/pnl_group1_vol2022_Q1.png")
 
 ```
 
-your comments required !!!
+The strategy demonstrates consistent growth in both gross and net PnL over Q1 2022, with only a minor divergence between gross and net PnL due to transaction costs. The performance shows resilience during drawdown periods and strong upward trends, indicating effective parameterization and market adaptability.
 
 ## PnL of results for **group 1** -- quarter 2022Q2
 
@@ -80,20 +93,20 @@ your comments required !!!
 ## PnL of results for **group 1** -- quarter 2022Q3
 
 ```{r, echo = F, out.width ='100%'}
-knitr::include_graphics("pnl_group1_2022_Q3.png")
+knitr::include_graphics("output_group1/pnl_group1_2022vol_Q3.png")
 
 ```
 
-your comments required !!!
+Some periods of stagnation and drawdowns can be observed, but it recovers effectively. The small gap between gross and net PnL indicates manageable transaction costs.
 
 ## PnL of results for **group 1** -- quarter 2022Q4
 
 ```{r, echo = F, out.width ='100%'}
-knitr::include_graphics("pnl_group1_2022_Q4.png")
+knitr::include_graphics("output_group1/pnl_group1_2022vol_Q4.png")
 
 ```
 
-your comments required !!!
+A strong start in Q4 2022 but faced a significant drawdown mid-quarter, indicating vulnerability during certain market conditions. However, it recovered well, ending the quarter positively, though net PnL lagged slightly
 
 ## PnL of results for **group 1** -- quarter 2023Q1
 
@@ -102,11 +115,11 @@ your comments required !!!
 ## PnL of results for **group 1** -- quarter 2023Q2
 
 ```{r, echo = F, out.width ='100%'}
-knitr::include_graphics("pnl_group1_2023_Q2.png")
+knitr::include_graphics("output_group1/pnl_group1_2023vol_Q2.png")
 
 ```
 
-your comments required !!!
+Q2 2023 shows a challenging period for the strategy, with a consistent downtrend in both gross and net PnL.
 
 ## PnL of results for **group 1** -- quarter 2023Q3
 
@@ -116,30 +129,30 @@ your comments required !!!
 ## PnL of results for **group 1** -- quarter 2023Q4
 
 ```{r, echo = F, out.width ='100%'}
-knitr::include_graphics("pnl_group1_2023_Q4.png")
+knitr::include_graphics("output_group1/pnl_group1_2023vol_Q4.png")
 
 ```
 
-your comments required !!!
+Q4 2023 reflects a strong recovery after a challenging start, with a steady upward trend in both gross and net PnL during the latter half of the quarter.
 
 
 ## PnL of results for **group 1** -- quarter 2024Q1
 
 ```{r, echo = F, out.width ='100%'}
-knitr::include_graphics("pnl_group1_2024_Q1.png")
+knitr::include_graphics("output_group1/pnl_group1_2024vol_Q1.png")
 
 ```
 
-your comments required !!!
+Q1 2024 exhibits volatile performance, with sharp swings in both gross and net PnL. Despite some strong gains, the strategy struggles to maintain consistent upward momentum, indicating sensitivity to market fluctuations. The divergence between gross and net PnL highlights the impact of transaction costs during periods of frequent trades.
 
 ## PnL of results for **group 1** -- quarter 2024Q2
 
 ```{r, echo = F, out.width ='100%'}
-knitr::include_graphics("pnl_group1_2024_Q2.png")
+knitr::include_graphics("pnl_group1_2024vol_Q2.png")
 
 ```
 
-your comments required !!!
+Q2 2024 shows a promising start with a significant peak early in the quarter, followed by periods of volatility and drawdowns. Again, the freuent trades mid-quarter influence our netPnL by the end of period.
 
 ## PnL of results for **group 1** -- quarter 2024Q3
 
@@ -314,5 +327,7 @@ Again, volatility is less pronounced, and again a drawdown, now in the middle of
 # Summary and conclusions
 
 <!-- Here you should include a summary of obtained results and some conclusions. -->
+The Volatility Breakout Momentum Strategy for group1 demonstrated robust performance across multiple quarters, leveraging breakout signals derived from volatility measures combined with moving averages. The strategy proved particularly effective during trending market conditions, showing consistent growth in gross and net PnL. Overall, this momentum-based approach provided a reliable framework for capturing breakout opportunities, delivering solid returns over the analyzed period while highlighting areas for further refinement.
+
 
 For group 2, the volatility-breakout strategy showed decent results on in-sample data. The main features are: rather high values of signal EMA and slow EMA; rather high volatility; large drawdowns are possible.
