@@ -37,8 +37,8 @@ get_quarter_stats = function(selected_quarter, aggr_strat_metrics)
 
 # do it simply in a loop on quarters
 
-best_ema_params = read.csv("output/best_ema_params.csv")
-best_vb_params = read.csv("output/best_vb_params.csv")
+best_ema_params = read.csv("output_group2/best_ema_params.csv")
+best_vb_params = read.csv("output_group2/best_vb_params.csv")
 
 create_ema_strats = function(tickers_data, tickers_config, pos_flat)
 {
@@ -103,7 +103,7 @@ for (selected_quarter in quarters) {
   
   # create a plot of gros and net pnl and save it to png file
   
-  png(filename = paste0("output/pnl_group2_", selected_quarter, ".png"),
+  png(filename = paste0("output_group2/pnl_group2_", selected_quarter, ".png"),
       width = 1000, height = 600)
   print( # when plotting in a loop you have to use print()
     plot(cbind(cumsum(daily_aggr$gross_pnl),
@@ -127,6 +127,6 @@ for (selected_quarter in quarters) {
 colSums(quarter_stats.all.group2[,c("cum_net_pnl", "target_metric")])
 
 write.csv(quarter_stats.all.group2, 
-          "output/quarter_stats.all.group2.csv",
+          "output_group2/quarter_stats.all.group2.csv",
           row.names = FALSE)
 
