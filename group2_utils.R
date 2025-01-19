@@ -2,11 +2,25 @@ library(xts)
 library(chron)
 library(lubridate)
 
+quarters = c("2022_Q1", "2022_Q3", "2022_Q4",
+             "2023_Q2", "2023_Q4",
+             "2024_Q1", "2024_Q2")
+
 tickers_config = data.frame(
   row.names=c("CAD", "AUD", "XAU", "XAG"),
   transaction_cost = c(10, 10, 15, 10),
   point_value = c(100000, 100000, 100, 5000)
 )
+
+get_strategies_perms = function()
+{
+  strats = c("mom", "mrev")
+  
+  permutations = data.frame(expand.grid(rep(list(strats), length(row.names(tickers_config)))))
+  colnames(permutations) = row.names(tickers_config)
+
+  return(permutations)
+}
 
 load_quarter = function(selected_quarter)
 {
@@ -161,7 +175,7 @@ get_strategy_metrics = function(daily_aggregates)
     cum_gross_pnl = sum(daily_aggregates$gross_pnl),
     cum_net_pnl = sum(daily_aggregates$net_pnl)
   )
-  strat_stats$target_metric = target_metric(strat_stats$net_calmar_ratio, strat_stats$net_pnl)
+  strat_stats$target_metric = target_metric(strat_stats$net_calmar_ratio, strat_stats$cum_net_pnl)
   
   strat_stats
 }

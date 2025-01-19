@@ -51,3 +51,5 @@ rsconnect/
 
 # Data folder
 data/
+
+*.log
