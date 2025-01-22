@@ -76,7 +76,7 @@ create_vb_strats = function(tickers_data, tickers_config, pos_flat)
 
 quarter_stats.all.group2 = NULL
 
-for (selected_quarter in quarters) {
+for (selected_quarter in sort(c(quarters, oos_quarters))) {
   message(selected_quarter)
   
   # loading the data for a selected quarter from a subdirectory "data""

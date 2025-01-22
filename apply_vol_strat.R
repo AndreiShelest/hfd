@@ -35,9 +35,9 @@ Sys.setenv(TZ = 'America/New_York')
 
 # do it simply in a loop on quarters
 
-for (selected_quarter in c("2022_Q1", "2022_Q3", "2022_Q4", 
-                           "2023_Q2", "2023_Q4", 
-                           "2024_Q1", "2024_Q2")) {
+for (selected_quarter in c("2022_Q1", "2022_Q2", "2022_Q3", "2022_Q4", 
+                           "2023_Q1", "2023_Q2", "2023_Q3", "2023_Q4", 
+                           "2024_Q1", "2024_Q2", "2024_Q3", "2024_Q4")) {
   
   message(selected_quarter)
   

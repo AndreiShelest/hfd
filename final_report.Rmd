@@ -114,6 +114,11 @@ The strategy demonstrates consistent growth in both gross and net PnL over Q1 20
 
 ## PnL of results for **group 1** -- quarter 2022Q2
 
+```{r, echo = F, out.width ='100%'}
+knitr::include_graphics("output_group1/pnl_group1_vol2022_Q2.png")
+
+```
+
 your comments required !!!
 
 ## PnL of results for **group 1** -- quarter 2022Q3
@@ -136,6 +141,11 @@ A strong start in Q4 2022 but faced a significant drawdown mid-quarter, indicati
 
 ## PnL of results for **group 1** -- quarter 2023Q1
 
+```{r, echo = F, out.width ='100%'}
+knitr::include_graphics("output_group1/pnl_group1_vol2023_Q1.png")
+
+```
+
 your comments required !!!
 
 ## PnL of results for **group 1** -- quarter 2023Q2
@@ -149,6 +159,10 @@ Q2 2023 shows a challenging period for the strategy, with a consistent downtrend
 
 ## PnL of results for **group 1** -- quarter 2023Q3
 
+```{r, echo = F, out.width ='100%'}
+knitr::include_graphics("output_group1/pnl_group1_vol2023_Q3.png")
+
+```
 
 your comments required !!!
 
@@ -182,11 +196,19 @@ Q2 2024 shows a promising start with a significant peak early in the quarter, fo
 
 ## PnL of results for **group 1** -- quarter 2024Q3
 
+```{r, echo = F, out.width ='100%'}
+knitr::include_graphics("output_group1/pnl_group1_vol2024_Q3.png")
+
+```
 
 your comments required !!!
 
 ## PnL of results for **group 1** -- quarter 2024Q4
 
+```{r, echo = F, out.width ='100%'}
+knitr::include_graphics("output_group1/pnl_group1_vol2024_Q4.png")
+
+```
 
 your comments required !!!
 
@@ -275,9 +297,13 @@ knitr::include_graphics("output_group2/pnl_group2_2022_Q1.png")
 
 Strategy gained traction at the end of the quarter. Rather high volatility.
 
-<!-- ## PnL of results for **group 2** -- quarter 2022Q2 -->
+## PnL of results for **group 2** -- quarter 2022Q2
 
-<!-- your comments required !!! -->
+```{r, echo = F, out.width ='100%'}
+knitr::include_graphics("output_group2/pnl_group2_2022_Q2.png")
+
+```
+your comments required !!!
 
 ## PnL of results for **group 2** -- quarter 2022Q3
 
@@ -299,6 +325,11 @@ Only last month brought increase in PnL. Volatility is somewhat smaller.
 
 ## PnL of results for **group 2** -- quarter 2023Q1
 
+```{r, echo = F, out.width ='100%'}
+knitr::include_graphics("output_group2/pnl_group2_2023_Q1.png")
+
+```
+
 your comments required !!!
 
 ## PnL of results for **group 2** -- quarter 2023Q2
@@ -310,10 +341,14 @@ knitr::include_graphics("output_group2/pnl_group2_2023_Q2.png")
 
 PnL mostly increased, but with a setback in the middle of the quarter. High volatility.
 
-<!-- ## PnL of results for **group 2** -- quarter 2023Q3 -->
+## PnL of results for **group 2** -- quarter 2023Q3
 
+```{r, echo = F, out.width ='100%'}
+knitr::include_graphics("output_group2/pnl_group2_2023_Q3.png")
 
-<!-- your comments required !!! -->
+```
+
+your comments required !!!
 
 ## PnL of results for **group 2** -- quarter 2023Q4
 
@@ -343,15 +378,23 @@ knitr::include_graphics("output_group2/pnl_group2_2024_Q2.png")
 
 Again, volatility is less pronounced, and again a drawdown, now in the middle of the quarter.
 
-<!-- ## PnL of results for **group 2** -- quarter 2024Q3 -->
+## PnL of results for **group 2** -- quarter 2024Q3
 
+```{r, echo = F, out.width ='100%'}
+knitr::include_graphics("output_group2/pnl_group2_2024_Q3.png")
 
-<!-- your comments required !!! -->
+```
 
-<!-- ## PnL of results for **group 2** -- quarter 2024Q4 -->
+your comments required !!!
 
+## PnL of results for **group 2** -- quarter 2024Q4
 
-<!-- your comments required !!! -->
+```{r, echo = F, out.width ='100%'}
+knitr::include_graphics("output_group2/pnl_group2_2024_Q4.png")
+
+```
+
+your comments required !!!
 
 # Summary and conclusions
 

@@ -5,6 +5,7 @@ library(lubridate)
 quarters = c("2022_Q1", "2022_Q3", "2022_Q4",
              "2023_Q2", "2023_Q4",
              "2024_Q1", "2024_Q2")
+oos_quarters = c("2022_Q2", "2023_Q1", "2023_Q3", "2024_Q3", "2024_Q4")
 
 tickers_config = data.frame(
   row.names=c("CAD", "AUD", "XAU", "XAG"),
